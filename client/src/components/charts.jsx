@@ -3,22 +3,26 @@ import WarehouseBarChart from "./WarehouseBarChart";
 import StockLineChart from "./StockLineChart";
 import ThresholdAlertChart from "./ThresholdAlertChart";
 
-const Charts = ({ stocks }) => {
-  // 🥧 Pie chart data
+const Charts = ({ stocks, warehouseStockData = [], warehouses = [] }) => {
+  // 🥧 Pie chart data by category
   const categoryData = stocks.reduce((acc, s) => {
     const found = acc.find((i) => i.category === s.category);
-    found ? found.quantity += +s.quantity : acc.push({ category: s.category, quantity: +s.quantity });
+    found ? (found.quantity += +s.quantity) : acc.push({ category: s.category, quantity: +s.quantity });
     return acc;
   }, []);
 
-  // 🏭 Bar chart data
-  const warehouseData = stocks.reduce((acc, s) => {
-    const found = acc.find((i) => i.warehouseId === s.warehouseId);
-    found ? found.quantity += +s.quantity : acc.push({ warehouseId: s.warehouseId, quantity: +s.quantity });
-    return acc;
-  }, []);
+  // 🏭 Bar chart data by warehouse (ensure even 0-stock ones appear)
+  const warehouseData = warehouses.map((wh) => {
+    const stockItems = stocks.filter((s) => s.warehouseId === wh.warehouseId);
+    const totalQuantity = stockItems.reduce((sum, s) => sum + Number(s.quantity), 0);
+    return {
+      warehouseId: wh.warehouseId,
+      quantity: totalQuantity,
+    };
+  });
+  
 
-  // 📈 Line chart (stocks added per date)
+  // 📈 Line chart - stock entries per day
   const dateData = stocks.reduce((acc, s) => {
     const date = new Date(s.dateOfEntry).toLocaleDateString("en-IN");
     const found = acc.find((i) => i.date === date);
@@ -26,7 +30,7 @@ const Charts = ({ stocks }) => {
     return acc;
   }, []);
 
-  // ⚠️ Area chart (alerts per date)
+  // ⚠️ Area chart - threshold alerts per current date
   const alertData = stocks.reduce((acc, s) => {
     const entry = new Date(s.dateOfEntry);
     const today = new Date();

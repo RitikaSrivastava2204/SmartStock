@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import StockSearchFilters from "../components/StockSearchFilters";
 
 const ManageStock = () => {
   const [stocks, setStocks] = useState([]);
+  const [filteredStocks, setFilteredStocks] = useState([]);
 
   useEffect(() => {
     fetchStock();
@@ -12,8 +14,21 @@ const ManageStock = () => {
     try {
       const res = await axios.get("http://localhost:5050/api/stocks/manage");
       setStocks(res.data);
+      setFilteredStocks(res.data);
     } catch (error) {
       console.error("❌ Error fetching stock:", error);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    const confirm = window.confirm("Are you sure you want to delete this item?");
+    if (!confirm) return;
+    try {
+      await axios.delete(`http://localhost:5050/api/stocks/${id}`);
+      fetchStock();
+    } catch (error) {
+      console.error("❌ Error deleting stock:", error);
+      alert("Failed to delete the stock item.");
     }
   };
 
@@ -23,6 +38,8 @@ const ManageStock = () => {
         <h2 className="text-3xl font-bold text-gray-800 mb-6 border-b pb-2">
           Manage Stock
         </h2>
+
+        <StockSearchFilters stocks={stocks} onFilter={setFilteredStocks} />
 
         <div className="bg-white rounded-2xl shadow-xl overflow-x-auto">
           <table className="min-w-full text-sm text-gray-700">
@@ -41,8 +58,8 @@ const ManageStock = () => {
               </tr>
             </thead>
             <tbody>
-              {stocks.length > 0 ? (
-                stocks.map((stock) => (
+              {filteredStocks.length > 0 ? (
+                filteredStocks.map((stock) => (
                   <tr
                     key={stock._id}
                     className="hover:bg-gray-50 border-t transition"
@@ -62,7 +79,6 @@ const ManageStock = () => {
                         year: "numeric",
                       })}
                     </td>
-
                     <td className="px-6 py-4">{stock.thresholdAge} days</td>
                     <td className="px-6 py-4">
                       <span
@@ -80,7 +96,10 @@ const ManageStock = () => {
                         <button className="px-3 py-1 rounded-lg text-sm bg-blue-500 hover:bg-blue-700 text-white transition">
                           Edit
                         </button>
-                        <button className="px-3 py-1 rounded-lg text-sm bg-red-500 hover:bg-red-700 text-white transition">
+                        <button
+                          onClick={() => handleDelete(stock._id)}
+                          className="px-3 py-1 rounded-lg text-sm bg-red-500 hover:bg-red-700 text-white transition"
+                        >
                           Delete
                         </button>
                       </div>

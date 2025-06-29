@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from "axios";
+import BarcodeScanner from "../components/BarcodeScanner";
 
 export default function AddStock() {
   const [formData, setFormData] = useState({
@@ -15,20 +16,45 @@ export default function AddStock() {
     status: 'active',
   });
 
+  const [warehouses, setWarehouses] = useState([]);
+  const [showScanner, setShowScanner] = useState(false); // ✅ New toggle for scanner
+
+  useEffect(() => {
+    const fetchWarehouses = async () => {
+      try {
+        const res = await axios.get("http://localhost:5050/api/warehouses");
+        setWarehouses(res.data);
+      } catch (error) {
+        console.error("❌ Error fetching warehouses:", error);
+      }
+    };
+
+    fetchWarehouses();
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // ✅ Handle barcode result
+  const handleBarcodeScan = (scannedText) => {
+    setFormData((prev) => ({
+      ...prev,
+      batchNumber: scannedText, // or itemName if you prefer
+    }));
+    setShowScanner(false); // auto-hide after scanning
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     try {
-      console.log("Sending this data:", formData)
+      console.log("Sending this data:", formData);
       const res = await axios.post("http://localhost:5050/api/stocks/add", formData);
       alert("✅ Stock item added!");
       console.log(res.data);
-  
+
       // Reset form
       setFormData({
         itemName: '',
@@ -46,15 +72,30 @@ export default function AddStock() {
       console.error("Error saving stock:", error);
       alert("❌ Failed to add stock. See console for error.");
     }
-  }; 
+  };
 
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Add Stock Item</h2>
 
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow max-w-3xl space-y-4">
+      {/* ✅ Toggle Scanner Button */}
+      <button
+        type="button"
+        onClick={() => setShowScanner(!showScanner)}
+        className="mb-4 px-5 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
+      >
+        {showScanner ? "Hide Scanner" : "Scan Barcode for Batch Number"}
+      </button>
 
-        {/* Item Name */}
+      {/* ✅ Barcode Scanner Component */}
+      {showScanner && (
+        <div className="mb-6">
+          <BarcodeScanner onScanSuccess={handleBarcodeScan} onClose={() => setShowScanner(false)} />
+        </div>
+      )}
+
+      {/* ✅ Your original form unchanged */}
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow max-w-3xl space-y-4">
         <div>
           <label className="block font-medium mb-1">Item Name</label>
           <input
@@ -67,7 +108,6 @@ export default function AddStock() {
           />
         </div>
 
-        {/* Batch Number */}
         <div>
           <label className="block font-medium mb-1">Batch Number</label>
           <input
@@ -80,7 +120,6 @@ export default function AddStock() {
           />
         </div>
 
-        {/* Category */}
         <div>
           <label className="block font-medium mb-1">Category</label>
           <input
@@ -93,7 +132,6 @@ export default function AddStock() {
           />
         </div>
 
-        {/* Quantity and Unit */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block font-medium mb-1">Quantity</label>
@@ -124,19 +162,25 @@ export default function AddStock() {
           </div>
         </div>
 
-        {/* Warehouse and Rack */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block font-medium mb-1">Warehouse ID</label>
-            <input
-              type="text"
+            <label className="block font-medium mb-1">Warehouse</label>
+            <select
               name="warehouseId"
               value={formData.warehouseId}
               onChange={handleChange}
               required
               className="w-full border border-gray-300 rounded p-2"
-            />
+            >
+              <option value="">Select Warehouse</option>
+              {warehouses.map((wh) => (
+                <option key={wh._id} value={wh.warehouseId}>
+                  {wh.name}
+                </option>
+              ))}
+            </select>
           </div>
+
           <div>
             <label className="block font-medium mb-1">Rack ID</label>
             <input
@@ -150,7 +194,6 @@ export default function AddStock() {
           </div>
         </div>
 
-        {/* Date of Entry & Threshold Age */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block font-medium mb-1">Date of Entry</label>
@@ -177,7 +220,6 @@ export default function AddStock() {
           </div>
         </div>
 
-        {/* Status */}
         <div>
           <label className="block font-medium mb-1">Status</label>
           <select
@@ -192,7 +234,6 @@ export default function AddStock() {
           </select>
         </div>
 
-        {/* Buttons */}
         <div className="flex justify-end gap-3 pt-4">
           <button
             type="reset"

@@ -15,5 +15,34 @@ router.post('/add', async (req, res) => {
   }
 });
 
+// GET all stock items
+router.get('/manage', async (req, res) => {
+  try {
+    const stocks = await StockItem.find(); // fetch all stocks from MongoDB
+    res.status(200).json(stocks);
+  } catch (error) {
+    console.error("❌ Error fetching stocks:", error);
+    res.status(500).json({ error: 'Error fetching stock' });
+  }
+});
+
+// DELETE stock by ID
+router.delete('/:id', async (req, res) => {
+  try {
+    const stock = await StockItem.findByIdAndDelete(req.params.id);
+    if (!stock) {
+      return res.status(404).json({ error: "Stock item not found" });
+    }
+    res.status(200).json({ message: "Stock item deleted successfully" });
+  } catch (error) {
+    console.error("❌ Error deleting stock:", error);
+    res.status(500).json({ error: "Failed to delete stock item" });
+  }
+});
+
+
+
+
+
 
 module.exports = router;
