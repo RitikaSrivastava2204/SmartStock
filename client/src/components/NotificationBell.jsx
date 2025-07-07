@@ -12,29 +12,14 @@ export default function NotificationBell() {
 
   const fetchNotifications = async () => {
     try {
-      const res = await axios.get("http://localhost:5050/api/stocks/manage");
-      const today = new Date();
-      const notifList = [];
+      const res = await axios.get("http://localhost:5050/api/alerts");
+      const data = res.data;
 
-      res.data.forEach((stock) => {
-        const entryDate = new Date(stock.dateOfEntry);
-        const age = Math.floor((today - entryDate) / (1000 * 60 * 60 * 24));
-        const threshold = parseInt(stock.thresholdAge);
-
-        if (age >= threshold) {
-          notifList.push({
-            type: "alert",
-            message: `⚠️ ${stock.itemName} (Batch ${stock.batchNumber}) has exceeded the threshold of ${threshold} days.`,
-            date: entryDate,
-          });
-        } else if (threshold - age <= 2) {
-          notifList.push({
-            type: "warning",
-            message: `⏰ ${stock.itemName} (Batch ${stock.batchNumber}) will reach threshold in ${threshold - age} day(s).`,
-            date: entryDate,
-          });
-        }
-      });
+      const notifList = data.map((alert) => ({
+        type: "alert",
+        message: `⚠️ ${alert.itemId?.itemName || "Unknown Item"} (Batch ${alert.itemId?.batchNumber || "-"}) has exceeded the threshold of ${alert.itemId?.thresholdAge} days.`,
+        date: alert.createdAt,
+      }));
 
       setNotifications(notifList);
     } catch (error) {
@@ -108,7 +93,7 @@ export default function NotificationBell() {
                   <div>
                     <p>{notif.message}</p>
                     <p className="text-xs text-gray-500 mt-1">
-                      Entry:{" "}
+                      Alert:{" "}
                       {new Date(notif.date).toLocaleDateString("en-IN", {
                         day: "2-digit",
                         month: "short",

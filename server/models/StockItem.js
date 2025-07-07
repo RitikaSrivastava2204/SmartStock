@@ -17,7 +17,19 @@ const stockSchema = new mongoose.Schema({
   dateOfEntry: Date,
   thresholdAge: Number,
   alertTriggered: { type: Boolean, default: false },
-  status: { type: String, enum: ['active', 'sold', 'removed'], default: 'active' },
+  status: {
+    type: String,
+    enum: ['active', 'sold', 'removed'],
+    default: 'active'
+  },
+
+  // ✅ Add this:
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false // optional for now, can be required if you're always passing it
+  }
+
 }, { timestamps: true });
 
 module.exports = mongoose.model('StockItem', stockSchema);
